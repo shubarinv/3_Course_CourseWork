@@ -87,9 +87,11 @@ int main(int argc, char *argv[]) {
     Texture pillar_brown_tex("../textures/brown1.png");
 
     Mesh cube("../resources/models/Crate1.obj");
-    Plane plane({0, 0, 0}, {0, 0, -10}, {10, 0, -10}, {10, 0, 0});
+    Plane plane({0, 0, 0}, {0, 0, -1}, {1, 0, -1}, {1, 0, 0}); // horizontal
+    Plane plane1({0, 0, 0}, {0, 1, 0}, {1, 1, 0}, {1, 0, 0});  // vertical
 
-    plane.addTexture("../textures/floor/flat-floor4_8.png")->setPosition({1, 1, 1})->setScale({1, 1, 1})->compile();
+    plane.addTexture("../textures/floor/flat-floor4_8.png")->setPosition({0, -1, 0})->setScale({10, 10, 10})->compile();
+    plane1.addTexture("../textures/floor/flat-floor4_8.png")->setPosition({0, -1, 0})->setScale({10, 10, 10})->compile();
 /*
   for (int i = 0; i < 10; ++i) {
 	for (int j = 0; j < 13; ++j) {
@@ -117,10 +119,10 @@ int main(int argc, char *argv[]) {
   }*/
 
     lightsManager = new LightsManager;
-    lightsManager->addLight(DiffuseLight("1_1", {{0, 10, 0}, {0.8, 0.8, 0.8}, 0.8}));
+    lightsManager->addLight(DiffuseLight("1_1", {{5, 5, 5}, {0.8, 0.8, 0.8}, 0.8}));
 
     // camera
-    camera = new Camera(glm::vec3(0.0f, 0.0f, 6.0f));
+    camera = new Camera(glm::vec3(0.0f, 0.0f, 0.0f));
     camera->setWindowSize(app.getWindow()->getWindowSize());
 
     glfwSetCursorPosCallback(app.getWindow()->getGLFWWindow(), mouse_callback);
@@ -135,11 +137,12 @@ int main(int argc, char *argv[]) {
         moveCamera();
         //updating data for shader
         shader_tex.reload();
-        Renderer::clear({1, 0, 0, 1});
+        Renderer::clear({0, 0, 0, 1});
 
         camera->passDataToShader(&shader_tex);
         lightsManager->passDataToShader(&shader_tex);
         plane.draw(&shader_tex);
+        plane1.draw(&shader_tex);
         /*for (auto &mesh : meshes) {
           mesh->draw(&shader_tex);
         }*/

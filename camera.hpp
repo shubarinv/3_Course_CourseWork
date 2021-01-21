@@ -116,7 +116,7 @@ class Camera {
 
   void passDataToShader(Shader* shader) const {
 	// pass projection matrix to shader (note that in this case it could change every frame)
-	glm::mat4 projection = glm::perspective(glm::radians(Zoom), (float)windowSize.x / (float)windowSize.y, 0.1f, 100.0f);
+	glm::mat4 projection = glm::perspective(glm::radians(Zoom), (float)windowSize.x / (float)windowSize.y, 0.1f, 40.0f);
 	shader->setUniformMat4f("projection", projection);
 
 	// camera/view transformation
