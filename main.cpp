@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
     glDepthFunc(GL_LESS);
     glCall(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
 
-    Shader shader_tex("../shaders/multiple_diffuse_shader_tex.glsl", false);
+    Shader shader_tex("../shaders/multiple_diffuse_shader.glsl", false);
     shader_tex.bind();
     shader_tex.setUniform1i("u_Texture", 0);
     shader_tex.setUniform1i("numDiffLights", 1);

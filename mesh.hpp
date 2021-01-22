@@ -64,6 +64,9 @@ public:
     glm::vec3 scale{1, 1, 1};
 
     Mesh *draw(Shader *shader) {
+        shader->bind();
+        if (textures.empty())shader->setUniform1i("useTextures", false);
+        else shader->setUniform1i("useTextures", true);
         shader->setUniformMat4f("model", model);
         if (!textures.empty() && shader->doesUniformExist("u_Texture")) {
             for (int i = 0; i < textures.size(); ++i) {
@@ -154,17 +157,18 @@ public:
         auto vertices = floatArrayToVec3Array(coordinates);
         std::vector<glm::vec3> normals{};
         for (int i = 0; i < vertices.size(); ++i) {
-            normals.push_back(calculateNormal(vertices[i], vertices[i+1], vertices[i+2]));
+            normals.push_back(calculateNormal(vertices[i], vertices[i + 1], vertices[i + 2]));
         }
-       // normals.push_back(glm::triangleNormal(vertices[vertices.size()-1], vertices[0], vertices[1]));
+        // normals.push_back(glm::triangleNormal(vertices[vertices.size()-1], vertices[0], vertices[1]));
 
         setNormals(normals);
     }
-    static glm::vec3 calculateNormal(glm::vec3 a,glm::vec3 b,glm::vec3 c){
-        glm::vec3 x={b.x-a.x,b.y-a.y,b.z-a.z};
-        glm::vec3 y={c.x-a.x,c.y-a.y,c.z-a.z};
 
-        auto cross=glm::normalize(glm::cross(x,y));
+    static glm::vec3 calculateNormal(glm::vec3 a, glm::vec3 b, glm::vec3 c) {
+        glm::vec3 x = {b.x - a.x, b.y - a.y, b.z - a.z};
+        glm::vec3 y = {c.x - a.x, c.y - a.y, c.z - a.z};
+
+        auto cross = glm::normalize(glm::cross(x, y));
         return cross;
     }
 
@@ -203,7 +207,7 @@ private:
     }
 
     Mesh *fillVAO() {
-        if(!wasBufferDefined(Buffer::NORMAL)){
+        if (!wasBufferDefined(Buffer::NORMAL)) {
             generateNormals();
         }
         VertexBufferLayout layout3;

@@ -40,6 +40,8 @@ public:
     }
 
     Plane *draw(Shader *shader) {
+        if (textures.empty())shader->setUniform1i("usetTextures", false);
+        else shader->setUniform1i("useTextures", true);
         shader->setUniformMat4f("model", model);
         if (!textures.empty() && shader->doesUniformExist("u_Texture")) {
             for (int i = 0; i < textures.size(); ++i) {
