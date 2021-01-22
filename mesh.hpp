@@ -31,6 +31,7 @@ class Mesh {
     IndexBuffer *indexBuffer{nullptr};
     std::vector<Mesh> relatedMeshes;
 
+
     Mesh() = default;
 
     explicit Mesh(std::vector<glm::vec3> _coordinates) {
@@ -65,9 +66,17 @@ public:
 
     Mesh *draw(Shader *shader) {
         shader->bind();
-        if (textures.empty())shader->setUniform1i("useTextures", false);
-        else shader->setUniform1i("useTextures", true);
+        if (textures.empty()) {
+            shader->setUniform1i("useTextures", false);
+        } else {
+            shader->setUniform1i("useTextures", true);
+        }
         shader->setUniformMat4f("model", model);
+        shader->setUniform3f("material.ambient", material.ambient);
+        shader->setUniform3f("material.specular", material.specular);
+        shader->setUniform3f("material.diffuse", material.diffuse);
+        shader->setUniform1f("material.shininess", material.shininess);
+
         if (!textures.empty() && shader->doesUniformExist("u_Texture")) {
             for (int i = 0; i < textures.size(); ++i) {
                 textures[i]->bind(i);
@@ -99,6 +108,22 @@ public:
         setTextureCoords(meshes.front().texCoords);
         setNormals(meshes.front().normals);
         vao = new VertexArray;
+        material = loadedOBJ.material;
+        for (int i = 1; i < meshes.size(); ++i) {
+            relatedMeshes.emplace_back(meshes[i]);
+            relatedMeshes.back().compile();
+        }
+        model = glm::mat4(1.f);
+    }
+
+    explicit Mesh(std::vector<ObjLoader::loadedOBJ> loadedOBJs) {
+        auto meshes = std::move(loadedOBJs);
+        loadedOBJ = meshes.front();
+        coordinates = meshes.front().vertices;
+        setTextureCoords(meshes.front().texCoords);
+        setNormals(meshes.front().normals);
+        vao = new VertexArray;
+        material = loadedOBJ.material;
         for (int i = 1; i < meshes.size(); ++i) {
             relatedMeshes.emplace_back(meshes[i]);
             relatedMeshes.back().compile();
@@ -112,9 +137,11 @@ public:
         setNormals(loadedObjData.normals);
         vao = new VertexArray;
         model = glm::mat4(1.f);
+        material = loadedOBJ.material;
     }
 
     ObjLoader::loadedOBJ loadedOBJ;
+    ObjLoader::MaterialInfo material;
 
     Mesh *compile() {
         if (coordinates.empty()) {
@@ -248,25 +275,38 @@ private:
 public:
     Mesh *setScale(glm::vec3 _scale) {
         scale = _scale;
+
         updateModel();
+        for (auto &mesh : relatedMeshes) {
+            mesh.setScale(scale);
+        }
         return this;
     }
 
     Mesh *setRotation(glm::vec3 _rotation) {
         rotation = _rotation;
         updateModel();
+        for (auto &mesh : relatedMeshes) {
+            mesh.setRotation(rotation);
+        }
         return this;
     }
 
     Mesh *setPosition(glm::vec3 _position) {
         position = _position;
         updateModel();
+        for (auto &mesh : relatedMeshes) {
+            mesh.setPosition(position);
+        }
         return this;
     }
 
     Mesh *setOrigin(glm::vec3 _origin) {
         origin = _origin;
         updateModel();
+        for (auto &mesh : relatedMeshes) {
+            mesh.setOrigin(origin);
+        }
         return this;
     }
 
@@ -274,8 +314,8 @@ public:
         model = glm::mat4(1.f);
         model = glm::translate(model, origin);
         model = glm::rotate(model, glm::radians(this->rotation.x), glm::vec3(1.f, 0.f, 0.f));
-        model = glm::rotate(model, glm::radians(this->rotation.x), glm::vec3(1.f, 0.f, 0.f));
-        model = glm::rotate(model, glm::radians(this->rotation.x), glm::vec3(1.f, 0.f, 0.f));
+        model = glm::rotate(model, glm::radians(this->rotation.y), glm::vec3(0.f, 1.f, 0.f));
+        model = glm::rotate(model, glm::radians(this->rotation.z), glm::vec3(0.f, 0.f, 1.f));
         model = glm::translate(model, position - origin);
         model = glm::scale(model, scale);
         return this;

@@ -52,13 +52,20 @@ struct Light {
     vec3 color;
 };
 
-uniform Light lights[NR_DIFF_LIGHTS];
+struct Material {
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+    float shininess;
+};
 
+uniform Light lights[NR_DIFF_LIGHTS];
+uniform Material material;
 vec3 CalcDiffLight(Light light, vec3 normal, vec3 fragPos);
-void main()
-{
+void main(){
     // diffuse
     vec3 norm = normalize(Normal);
+
     vec3 result;
 
     for (int i = 0; i < numDiffLights; i++)
@@ -70,7 +77,7 @@ void main()
         color = FragColor*texColor;
     }
     else {
-        color = FragColor*vec4(ourColor,1.0);
+        color = vec4(material.diffuse-vec3(0.2)+material.diffuse,1.0)+FragColor;
     }
 }
 // calculates the color when using a directional light.

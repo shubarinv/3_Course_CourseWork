@@ -75,7 +75,7 @@ private:
             //LOG_S(INFO) << "indices: " << indices.size();
             LOG_S(INFO) << "normals: " << normals.size();
             LOG_S(INFO) << "material: " << materials[mesh->mMaterialIndex].name;
-            
+
             LOG_S(INFO) << "---------------";
             loadedMeshes.push_back({indices, vertices, texCoords, normals,materials[mesh->mMaterialIndex]});
         }

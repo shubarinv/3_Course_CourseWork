@@ -7,6 +7,7 @@
 #include "renderer.hpp"
 #include "shader.hpp"
 #include "plane.h"
+#include <random>
 
 LightsManager *lightsManager;
 float lastX = 0;
@@ -18,6 +19,17 @@ double lastFrame = 0.0f;
 Camera *camera;
 int pressedKey = -1;
 
+template<typename Numeric, typename Generator = std::mt19937>
+Numeric random(Numeric from, Numeric to) {
+    thread_local static Generator gen(std::random_device{}());
+
+    using dist_type = typename std::conditional<
+            std::is_integral<Numeric>::value, std::uniform_int_distribution<Numeric>, std::uniform_real_distribution<Numeric> >::type;
+
+    thread_local static dist_type dist;
+
+    return dist(gen, typename dist_type::param_type{from, to});
+}
 
 std::vector<glm::vec3> getCoordsForVertices(double xc, double yc, double size, int n) {
     std::vector<glm::vec3> vertices;
@@ -97,6 +109,7 @@ int main(int argc, char *argv[]) {
     shader_tex.bind();
     shader_tex.setUniform1i("u_Texture", 0);
     shader_tex.setUniform1i("numDiffLights", 1);
+    ObjLoader objLoader;
     std::vector<Mesh *> meshes;
 
     //  water.setUniform1i("numDiffLights", 1);
@@ -104,19 +117,91 @@ int main(int argc, char *argv[]) {
     std::vector<Plane *> planes;
     meshes.push_back(new Mesh("../resources/models/mountain.obj"));
     meshes.back()->addTexture("../textures/mountain.png")->setScale({0.2, 1, 0.2})->setPosition(
-            {76, 0, -90})->setRotation({180, 43, 0})->compile();
+            {196, 10, -173})->setRotation({180, 43, 0})->compile();
+
+    meshes.push_back(new Mesh(meshes.back()->loadedOBJ));
+    meshes.back()->addTexture("../textures/mountain.png")->setScale({0.2, 1.2, 0.45})->setPosition(
+            {289, 10, -88})->setRotation({180, 245, 0})->compile();
+
     meshes.push_back(new Mesh("../resources/models/lake.obj"));
     meshes.back()->addTexture("../textures/sand.png")->setScale({0.1, 0.1, 0.1})->setPosition(
-            {0, 0, 0})->setRotation({0, 43, 0})->compile();
+            {0, 0, 0})->setRotation({0, 0, 0})->compile();
     lightsManager = new LightsManager;
     lightsManager->addLight(DiffuseLight("1_1", {{5, 60, 5}, {0.8, 0.8, 0.8}, 0.8}));
 
-    planes.push_back(new Plane({0, 0, 0}, {0, 0, -1}, {1, 0, -1}, {1, 0, 0}, {200, 200, 200}));
+    planes.push_back(new Plane({0, 0, 0}, {0, 0, -1}, {1, 0, -1}, {1, 0, 0}, {60, 60, 60}, false));
     planes.back()->addTexture("../textures/Water_002_COLOR.png")->
-            addTexture("../textures/Water_001_SPEC.png")->setPosition({-100, -1.5, 100})->compile();
+            addTexture("../textures/Water_001_SPEC.png")->setPosition({-30, -1.5, 30})->compile();
 
-    meshes.push_back(new Mesh("../resources/models/pine.obj"));
-    meshes.back()->compile();
+
+    auto treeObj = objLoader.loadObj("../resources/models/lowpolytree.obj");
+    auto trees = getCoordsForVertices(0, 0, 100, 400);
+    for (auto &tree:trees) {
+        meshes.push_back(new Mesh(treeObj));
+        auto scale = random<float>(0.5f, 2.5f);
+        if (scale >= 1) {
+            meshes.back()->setPosition(
+                    {tree.x + random<float>(-40.f, 40.f), tree.y + scale + 1, tree.z + random<float>(-40.f, 40.f)})->
+                    setScale({scale, scale, scale})->compile();
+        } else {
+            meshes.back()->setPosition(
+                    {tree.x + random<float>(-40.f, 40.f),
+                     tree.y + scale + 0.3, tree.z + random<float>(-40.f, 40.f)})->
+                    setScale({scale, scale, scale})->compile();
+        }
+
+    }
+
+    // sand to grass blend
+    planes.push_back(new Plane({0, 0, 0}, {0, 0, -1}, {1, 0, -1}, {1, 0, 0}, {60, 60, 30}, true));
+    planes.back()->addTexture("../textures/sand_and_grass_blend.png")->setPosition({-30, 0, 60})->compile();
+
+    planes.push_back(new Plane({0, 0, 0}, {0, 0, -1}, {1, 0, -1}, {1, 0, 0}, {60, 60, 30}, true));
+    planes.back()->addTexture("../textures/sand_and_grass_blend.png")->setPosition({-30, 0, 60})->setRotation(
+            {0, 180, 0})->compile();
+
+    planes.push_back(new Plane({0, 0, 0}, {0, 0, -1}, {1, 0, -1}, {1, 0, 0}, {60, 60, 30}, true));
+    planes.back()->addTexture("../textures/sand_and_grass_blend.png")->setPosition({-30, 0, 60})->setRotation(
+            {0, 90, 0})->compile();
+
+    planes.push_back(new Plane({0, 0, 0}, {0, 0, -1}, {1, 0, -1}, {1, 0, 0}, {60, 60, 30}, true));
+    planes.back()->addTexture("../textures/sand_and_grass_blend.png")->setPosition({-30, 0, 60})->setRotation(
+            {0, 270, 0})->compile();
+
+    planes.push_back(new Plane({0, 0, 0}, {0, 0, -1}, {1, 0, -1}, {1, 0, 0}, {30, 30, 30}, true));
+    planes.back()->addTexture("../textures/sand_and_grass_blend_angle.png")->setPosition({-60, 0, 60})->compile();
+
+    planes.push_back(new Plane({0, 0, 0}, {0, 0, -1}, {1, 0, -1}, {1, 0, 0}, {30, 30, 30}, true));
+    planes.back()->addTexture("../textures/sand_and_grass_blend_angle.png")->setPosition({-60, 0, 60})->setRotation(
+            {0, 90, 0})->compile();
+
+    planes.push_back(new Plane({0, 0, 0}, {0, 0, -1}, {1, 0, -1}, {1, 0, 0}, {30, 30, 30}, true));
+    planes.back()->addTexture("../textures/sand_and_grass_blend_angle.png")->setPosition({-60, 0, 60})->setRotation(
+            {0, 180, 0})->compile();
+
+    planes.push_back(new Plane({0, 0, 0}, {0, 0, -1}, {1, 0, -1}, {1, 0, 0}, {30, 30, 30}, true));
+    planes.back()->addTexture("../textures/sand_and_grass_blend_angle.png")->setPosition({-60, 0, 60})->setRotation(
+            {0, 270, 0})->compile();
+
+    //grass
+
+    planes.push_back(new Plane({0, 0, 0}, {0, 0, -1}, {1, 0, -1}, {1, 0, 0}, {600, 600, 600}, {8, 24}));
+    planes.back()->addTexture("../textures/grass.png")->setPosition({-660, 0, 300})->compile();
+
+    planes.push_back(new Plane({0, 0, 0}, {0, 0, -1}, {1, 0, -1}, {1, 0, 0}, {600, 600, 600}, {8, 24}));
+    planes.back()->addTexture("../textures/grass.png")->setPosition({-660, 0, 300})->setRotation(
+            {0, 180, 0})->compile();
+
+    planes.push_back(new Plane({0, 0, 0}, {0, 0, -1}, {1, 0, -1}, {1, 0, 0}, {120, 600, 400}, {24, 8}));
+    planes.back()->addTexture("../textures/grass.png")->setPosition({-60, 0, -60})->compile();
+
+    planes.push_back(new Plane({0, 0, 0}, {0, 0, -1}, {1, 0, -1}, {1, 0, 0}, {120, 600, 400}, {24, 8}));
+    planes.back()->addTexture("../textures/grass.png")->setPosition({-60, 0, -60})->setRotation({0, 180, 0})->compile();
+
+    auto carsPath = getCoordsForVertices(0, 0, 155, 18000);
+    Mesh car("../resources/models/car_1.fbx");
+    car.addTexture("../textures/Car Texture 1.png")->setOrigin({carsPath[0].x, 0, carsPath[0].z})->
+            setPosition({carsPath[0].x, 0, carsPath[0].z})->setRotation({0, 90, 0})->compile();
     // camera
     camera = new Camera(glm::vec3(0.0f, 0.0f, 0.0f));
     camera->setWindowSize(app.getWindow()->getWindowSize());
@@ -125,6 +210,8 @@ int main(int argc, char *argv[]) {
     glfwSetScrollCallback(app.getWindow()->getGLFWWindow(), scroll_callback);
     lightsManager->getLightByNameDir("1_1")->enable();
 
+    int carRot{0};
+    float car1R={90};
     while (!app.getShouldClose()) {
         app.getWindow()->updateFpsCounter();
         auto currentFrame = glfwGetTime();
@@ -143,9 +230,17 @@ int main(int argc, char *argv[]) {
         for (auto &mesh:meshes) {
             mesh->draw(&shader_tex);
         }
+        car.draw(&shader_tex);
 
         glCall(glfwSwapBuffers(app.getWindow()->getGLFWWindow()));
         glfwPollEvents();
+        if(carRot==carsPath.size()-1){
+            carRot=0;
+        }
+        carRot++;
+        car.setOrigin({carsPath[carRot].x, 0, carsPath[carRot].z})->
+                setPosition({carsPath[carRot].x, 0, carsPath[carRot].z})->setRotation({0, car1R, 0});
+        car1R-=0.02;
     }
     glfwTerminate();
     exit(EXIT_SUCCESS);

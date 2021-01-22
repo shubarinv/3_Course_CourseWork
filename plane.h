@@ -17,16 +17,45 @@ class Plane {
     glm::vec3 origin{0, 0, 0};
     glm::vec3 rotation{0, 0, 0};
     glm::vec3 scale{1, 1, 1};
-    std::vector<float> coordinates;
+    glm::vec2 texScale{1,1};
 public:
-    Plane(glm::vec3 a1, glm::vec3 a2, glm::vec3 b1, glm::vec3 b2,glm::vec3 scale={1,1,1}) {
+    [[nodiscard]] const glm::vec3 &getPosition() const {
+        return position;
+    }
+
+    [[nodiscard]] const glm::vec3 &getOrigin() const {
+        return origin;
+    }
+
+    [[nodiscard]] const glm::vec3 &getRotation() const {
+        return rotation;
+    }
+
+    [[nodiscard]] const glm::vec3 &getScale() const {
+        return scale;
+    }
+
+private:
+    std::vector<float> coordinates;
+    bool texCoordsIgnoreScale=false;
+public:
+    Plane(glm::vec3 a1, glm::vec3 a2, glm::vec3 b1, glm::vec3 b2,glm::vec3 scale={1,1,1},bool _texCoordsIgnoreScale=false) {
         coordinates = vec3ArrayToFloatArray({a1, a2, b1, b1, b2, a1});
 
         vao = new VertexArray;
         model = glm::mat4(1.f);
         setScale(scale);
+        texCoordsIgnoreScale=_texCoordsIgnoreScale;
     }
+    Plane(glm::vec3 a1, glm::vec3 a2, glm::vec3 b1, glm::vec3 b2,glm::vec3 scale={1,1,1},glm::vec2 _texScale={1,1}) {
+        coordinates = vec3ArrayToFloatArray({a1, a2, b1, b1, b2, a1});
 
+        vao = new VertexArray;
+        model = glm::mat4(1.f);
+        setScale(scale);
+        texScale=_texScale;
+        texCoordsIgnoreScale=true;
+    }
     Plane *compile() {
         if (coordinates.empty()) {
             LOG_S(ERROR) << "Coordinates were not set!";
@@ -68,8 +97,15 @@ public:
         textures.push_back(new Texture(filePath));
         if (!wasBufferDefined(Buffer::TEXTURE_COORDS)) {
             LOG_S(INFO) << "Generating textureCoords";
-            auto texCoords = Texture::generateTextureCoords(coordinates.size() / 3,{scale.x/2,scale.z/2});
-            addNewBuffer(TextureBuffer(texCoords));
+            if(texCoordsIgnoreScale){
+                auto texCoords = Texture::generateTextureCoords(coordinates.size() / 3,texScale);
+                addNewBuffer(TextureBuffer(texCoords));
+            }
+            else{
+                auto texCoords = Texture::generateTextureCoords(coordinates.size() / 3,{scale.x/2,scale.z/2});
+                addNewBuffer(TextureBuffer(texCoords));
+            }
+
         }
         return this;
     }
