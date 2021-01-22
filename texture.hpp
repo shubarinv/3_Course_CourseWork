@@ -52,7 +52,7 @@ class Texture {
 	LOG_S(INFO) << "Texture loaded successfully!";
   }
 
-  static std::vector<float> generateTextureCoords(unsigned int size) {
+  static std::vector<float> generateTextureCoords(unsigned int size,glm::vec2 scale={1,1}) {
 	float texCoordsPreset[] = {
 		0.0f, 0.0f,
 		1.0f, 0.0f,
@@ -65,8 +65,8 @@ class Texture {
 	short presetNum{0};
 	for (int i = 0; i < size; i++) {
 	  if (presetNum > 11)presetNum = 0;
-	  textureCoords.push_back(texCoordsPreset[presetNum]);
-	  textureCoords.push_back(texCoordsPreset[presetNum + 1]);
+	  textureCoords.push_back(texCoordsPreset[presetNum]*scale.x);
+	  textureCoords.push_back(texCoordsPreset[presetNum + 1]*scale.y);
 	  presetNum += 2;
 	}
 

@@ -35,6 +35,7 @@ public:
         addNewBuffer(VertexBuffer(coordinates));// Setting VBO
         generateNormals();
         fillVAO();
+
         return this;
     }
 
@@ -65,7 +66,7 @@ public:
         textures.push_back(new Texture(filePath));
         if (!wasBufferDefined(Buffer::TEXTURE_COORDS)) {
             LOG_S(INFO) << "Generating textureCoords";
-            auto texCoords = Texture::generateTextureCoords(coordinates.size() / 3);
+            auto texCoords = Texture::generateTextureCoords(coordinates.size() / 3,{scale.x/2,scale.z/2});
             addNewBuffer(TextureBuffer(texCoords));
         }
         return this;
@@ -172,8 +173,8 @@ public:
         model = glm::mat4(1.f);
         model = glm::translate(model, origin);
         model = glm::rotate(model, glm::radians(this->rotation.x), glm::vec3(1.f, 0.f, 0.f));
-        model = glm::rotate(model, glm::radians(this->rotation.x), glm::vec3(1.f, 0.f, 0.f));
-        model = glm::rotate(model, glm::radians(this->rotation.x), glm::vec3(1.f, 0.f, 0.f));
+        model = glm::rotate(model, glm::radians(this->rotation.y), glm::vec3(0.f, 1.f, 0.f));
+        model = glm::rotate(model, glm::radians(this->rotation.z), glm::vec3(0.f, 0.f, 1.f));
         model = glm::translate(model, position - origin);
         model = glm::scale(model, scale);
         return this;

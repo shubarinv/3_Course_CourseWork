@@ -18,6 +18,24 @@ double lastFrame = 0.0f;
 Camera *camera;
 int pressedKey = -1;
 
+
+std::vector<glm::vec3> getCoordsForVertices(double xc, double yc, double size, int n) {
+    std::vector<glm::vec3> vertices;
+    auto xe = xc + size;
+    auto ye = yc;
+    vertices.emplace_back(xe, yc, ye);
+    double alpha = 0;
+    for (int i = 0; i < n - 1; i++) {
+        alpha += 2 * M_PI / n;
+        auto xr = xc + size * cos(alpha);
+        auto yr = yc + size * sin(alpha);
+        xe = xr;
+        ye = yr;
+        vertices.emplace_back(xe, yc, ye);
+    }
+    return vertices;
+}
+
 void programQuit([[maybe_unused]] int key, [[maybe_unused]] int action, Application *app) {
     app->close();
     LOG_S(INFO) << "Quiting...";
@@ -81,45 +99,24 @@ int main(int argc, char *argv[]) {
     shader_tex.setUniform1i("numDiffLights", 1);
     std::vector<Mesh *> meshes;
 
-    //базовая высота -2.5
-    Texture floor_metal_tex("../textures/floor/flat-floor4_8.png");
-    Texture floor_blue_tex("../textures/floor/flat-flat14.png");
-    Texture pillar_brown_tex("../textures/brown1.png");
+    Shader shader_color("../shaders/multiple_diffuse_shader_color.glsl", false);
+    shader_color.bind();
+    shader_color.setUniform1i("numDiffLights", 1);
 
-    Mesh cube("../resources/models/Crate1.obj");
-    Plane plane({0, 0, 0}, {0, 0, -1}, {1, 0, -1}, {1, 0, 0}); // horizontal
-    Plane plane1({0, 0, 0}, {0, 1, 0}, {1, 1, 0}, {1, 0, 0});  // vertical
+    //  water.setUniform1i("numDiffLights", 1);
 
-    plane.addTexture("../textures/floor/flat-floor4_8.png")->setPosition({0, -1, 0})->setScale({10, 10, 10})->compile();
-    plane1.addTexture("../textures/floor/flat-floor4_8.png")->setPosition({0, -1, 0})->setScale({10, 10, 10})->compile();
-/*
-  for (int i = 0; i < 10; ++i) {
-	for (int j = 0; j < 13; ++j) {
-	  if ((i == 3 || i == 8) && (j == 3 || j == 7)) {
-		if (i == 3) {
-		  meshes.emplace_back(new Mesh(cube.loadedOBJ));
-		  meshes.back()->setTextures({&pillar_brown_tex})->setPosition({(i * 2)-0.5, -1.2, (j * 2) + 1.5})->setScale({0.5, 1, 0.5})->compile();
-		  meshes.emplace_back(new Mesh(cube.loadedOBJ));
-		  meshes.back()->setTextures({&pillar_brown_tex})->setPosition({(i * 2)-0.5, 0.8, (j * 2) + 1.5})->setScale({0.5, 1, 0.5})->compile();
-		} else {
-		  meshes.emplace_back(new Mesh(cube.loadedOBJ));
-		  meshes.back()->setTextures({&pillar_brown_tex})->setPosition({(i * 2) - 0.25, -1.2, (j * 2) + 0.25})->setScale({0.5, 1, 0.5})->compile();
-		  meshes.emplace_back(new Mesh(cube.loadedOBJ));
-		  meshes.back()->setTextures({&pillar_brown_tex})->setPosition({(i * 2) - 0.25, 0.8, (j * 2) + 0.25})->setScale({0.5, 1, 0.5})->compile();
-		}
-	  }
-	  meshes.emplace_back(new Mesh(cube.loadedOBJ));
-	  if (i >= 3 && i <= 7 && j >= 4 && j <= 9) {
-		meshes.back()->setTextures({&floor_blue_tex})->setPosition({i * 2, -2.8, j * 2})->setScale({1, 0.01, 1})->compile();
-
-	  } else {
-		meshes.back()->setTextures({&floor_metal_tex})->setPosition({i * 2, -2.5, j * 2})->setScale({1, 0.3, 1})->compile();
-	  }
-	}
-  }*/
-
+    std::vector<Plane *> planes;
+    meshes.push_back(new Mesh("../resources/models/mountain.obj"));
+    meshes.back()->addTexture("../textures/mountain.png")->setScale({0.2, 1, 0.2})->setPosition(
+            {76, 0, -90})->setRotation({180, 43, 0})->compile();
+    meshes.push_back(new Mesh("../resources/models/lake.obj"));
+    meshes.back()->addTexture("../textures/sand.png")->setScale({0.1, 0.1, 0.1})->setPosition(
+            {0, 0, 0})->setRotation({0, 43, 0})->compile();
     lightsManager = new LightsManager;
-    lightsManager->addLight(DiffuseLight("1_1", {{5, 5, 5}, {0.8, 0.8, 0.8}, 0.8}));
+    lightsManager->addLight(DiffuseLight("1_1", {{5, 60, 5}, {0.8, 0.8, 0.8}, 0.8}));
+    planes.push_back(new Plane({0, 0, 0}, {0, 0, -1}, {1, 0, -1}, {1, 0, 0},{200, 200, 200}));
+    planes.back()->addTexture("../textures/Water_002_COLOR.png")->
+    addTexture("../textures/Water_001_SPEC.png")->setPosition({-100, -1.5, 100})->compile();
 
     // camera
     camera = new Camera(glm::vec3(0.0f, 0.0f, 0.0f));
@@ -135,17 +132,25 @@ int main(int argc, char *argv[]) {
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
         moveCamera();
-        //updating data for shader
-        shader_tex.reload();
         Renderer::clear({0, 0, 0, 1});
+
 
         camera->passDataToShader(&shader_tex);
         lightsManager->passDataToShader(&shader_tex);
-        plane.draw(&shader_tex);
-        plane1.draw(&shader_tex);
-        /*for (auto &mesh : meshes) {
-          mesh->draw(&shader_tex);
-        }*/
+        //plane.draw(&shader_tex);
+        for (auto &plane:planes) {
+            plane->draw(&shader_tex);
+        }
+        for (auto &mesh:meshes) {
+            mesh->draw(&shader_tex);
+        }
+
+        // DO NOT MIX DIFFERENT SHADERS
+
+        //   camera->passDataToShader(&shader_tex);
+        //   lightsManager->passDataToShader(&shader_tex);
+        //   plane1.draw(&shader_tex);
+
 
         glCall(glfwSwapBuffers(app.getWindow()->getGLFWWindow()));
         glfwPollEvents();

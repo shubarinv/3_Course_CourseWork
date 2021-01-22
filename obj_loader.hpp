@@ -83,8 +83,11 @@ class ObjLoader {
 	// Usually - if speed is not the most important aspect for you - you'll
 	// probably to request more postprocessing than we do in this example.
 	const aiScene* scene = importer.ReadFile(pFile,
-											 //aiProcess_CalcTangentSpace |
-											 aiProcess_Triangulate | aiProcess_SortByPType | aiProcess_JoinIdenticalVertices | aiProcess_GenUVCoords | aiProcess_GenNormals);
+                                             aiProcess_GenSmoothNormals |
+                                             aiProcess_CalcTangentSpace |
+                                             aiProcess_Triangulate |
+                                             aiProcess_JoinIdenticalVertices |
+                                             aiProcess_SortByPType);
 	// If the import failed, report it
 	if (!scene) {
 	  LOG_S(ERROR) << "Failed to load file: " << importer.GetErrorString();
