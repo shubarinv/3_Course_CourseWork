@@ -99,10 +99,6 @@ int main(int argc, char *argv[]) {
     shader_tex.setUniform1i("numDiffLights", 1);
     std::vector<Mesh *> meshes;
 
-    Shader shader_color("../shaders/multiple_diffuse_shader_color.glsl", false);
-    shader_color.bind();
-    shader_color.setUniform1i("numDiffLights", 1);
-
     //  water.setUniform1i("numDiffLights", 1);
 
     std::vector<Plane *> planes;
@@ -114,10 +110,13 @@ int main(int argc, char *argv[]) {
             {0, 0, 0})->setRotation({0, 43, 0})->compile();
     lightsManager = new LightsManager;
     lightsManager->addLight(DiffuseLight("1_1", {{5, 60, 5}, {0.8, 0.8, 0.8}, 0.8}));
-    planes.push_back(new Plane({0, 0, 0}, {0, 0, -1}, {1, 0, -1}, {1, 0, 0},{200, 200, 200}));
-    planes.back()->addTexture("../textures/Water_002_COLOR.png")->
-    addTexture("../textures/Water_001_SPEC.png")->setPosition({-100, -1.5, 100})->compile();
 
+    planes.push_back(new Plane({0, 0, 0}, {0, 0, -1}, {1, 0, -1}, {1, 0, 0}, {200, 200, 200}));
+    planes.back()->addTexture("../textures/Water_002_COLOR.png")->
+            addTexture("../textures/Water_001_SPEC.png")->setPosition({-100, -1.5, 100})->compile();
+
+    meshes.push_back(new Mesh("../resources/models/pine.obj"));
+    meshes.back()->compile();
     // camera
     camera = new Camera(glm::vec3(0.0f, 0.0f, 0.0f));
     camera->setWindowSize(app.getWindow()->getWindowSize());
@@ -144,13 +143,6 @@ int main(int argc, char *argv[]) {
         for (auto &mesh:meshes) {
             mesh->draw(&shader_tex);
         }
-
-        // DO NOT MIX DIFFERENT SHADERS
-
-        //   camera->passDataToShader(&shader_tex);
-        //   lightsManager->passDataToShader(&shader_tex);
-        //   plane1.draw(&shader_tex);
-
 
         glCall(glfwSwapBuffers(app.getWindow()->getGLFWWindow()));
         glfwPollEvents();
