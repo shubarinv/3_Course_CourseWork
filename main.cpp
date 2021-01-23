@@ -307,7 +307,7 @@ int main(int argc, char *argv[]) {
                 {segment.x, 0.01, segment.z})->setRotation(
                 {0, path.initialRot + (path.anglePerTick * (float) i), 0})->compile();
     }
-    carManager.addCars(1);
+    carManager.addCars(15);
 
 
     while (!app.getShouldClose()) {
@@ -361,10 +361,10 @@ int main(int argc, char *argv[]) {
         LOG_S(INFO) << "LightPos: "<<lightRot;
         lightRot += 0.002;
         if (lightRot >= 8) {
-            lightRot = 0;
+            lightRot = 0.005;
         }
 
-       if (lightRot > 5 ) {
+       if (lightRot > 5||lightRot<0.5 ) {
            lightsManager->getDirLightByName("sun")->diffuse = {0, 0, 0};
            lightsManager->getDirLightByName("sun")->specular = {0, 0, 0};
            skyboxIntensity=0.4;
@@ -382,6 +382,9 @@ int main(int argc, char *argv[]) {
            }
            if(skyboxIntensity>1){
                skyboxIntensity=1;
+           }
+           if(skyboxIntensity<0.3){
+               skyboxIntensity=0.3;
            }
        }
         lightsManager->getDirLightByName("sun")->direction = {sin(lightRot), cos(lightRot), cos(lightRot)};
