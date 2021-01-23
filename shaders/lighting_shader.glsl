@@ -13,6 +13,7 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
+
 void main()
 {
     FragPos = vec3(model * vec4(aPos, 1.0));
@@ -21,14 +22,19 @@ void main()
 
     gl_Position = projection * view * vec4(FragPos, 1.0);
 }
-#shader fragment
-#version 410 core
+    #shader fragment
+    #version 410 core
 
 out vec4 FragColor;
 
 struct Material {
     sampler2D diffuse;
     sampler2D specular;
+
+    vec3 mat_diffuse;
+    vec3 mat_specular;
+    vec3 mat_ambient;
+
     float shininess;
 };
 
@@ -83,6 +89,7 @@ uniform DirLight dirLights[NR_DIR_LIGHTS];
 uniform PointLight pointLights[NR_POINT_LIGHTS];
 uniform SpotLight spotLight[NR_SPOT_LIGHTS];
 uniform Material material;
+uniform int useTexture;
 
 // function prototypes
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir);
@@ -103,13 +110,13 @@ void main()
     // == =====================================================
     // phase 1: directional lighting
     vec3 result;
-    for(int i = 0; i < NUM_DIR_LIGHTS; i++)
+    for (int i = 0; i < NUM_DIR_LIGHTS; i++)
     result += CalcDirLight(dirLights[i], norm, viewDir);
     // phase 2: point lights
-    for(int i = 0; i < NUM_POINT_LIGHTS; i++)
+    for (int i = 0; i < NUM_POINT_LIGHTS; i++)
     result += CalcPointLight(pointLights[i], norm, FragPos, viewDir);
     // phase 3: spot light
-    for(int i = 0; i < NUM_SPOT_LIGHTS; i++)
+    for (int i = 0; i < NUM_SPOT_LIGHTS; i++)
     result += CalcSpotLight(spotLight[i], norm, FragPos, viewDir);
 
     FragColor = vec4(result, 1.0);
@@ -125,9 +132,19 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir)
     vec3 reflectDir = reflect(-lightDir, normal);
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
     // combine results
-    vec3 ambient = light.ambient * vec3(texture(material.diffuse, TexCoords));
-    vec3 diffuse = light.diffuse * diff * vec3(texture(material.diffuse, TexCoords));
-    vec3 specular = light.specular * spec * vec3(texture(material.specular, TexCoords));
+    vec3 ambient;
+    vec3 diffuse;
+    vec3 specular;
+    if (useTexture==1){
+        ambient = light.ambient * vec3(texture(material.diffuse, TexCoords));
+        diffuse = light.diffuse * diff * vec3(texture(material.diffuse, TexCoords));
+        specular = light.specular * spec * vec3(texture(material.specular, TexCoords));
+    }
+    else {
+        ambient = light.ambient * material.mat_diffuse;
+        diffuse = light.diffuse * diff *material. mat_diffuse;
+        specular = light.specular * spec * material.mat_specular;
+    }
     return (ambient + diffuse + specular);
 }
 

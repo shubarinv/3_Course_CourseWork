@@ -21,8 +21,8 @@ class Texture {
 	load();
 	glCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
 	glCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
-	glCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
-	glCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+	glCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT));
+	glCall(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT));
 
 
 	glCall(glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, localBuffer.data()));
@@ -52,7 +52,7 @@ class Texture {
 	LOG_S(INFO) << "Texture loaded successfully!";
   }
 
-  static std::vector<float> generateTextureCoords(unsigned int size) {
+  static std::vector<float> generateTextureCoords(unsigned int size,glm::vec2 scale={1,1}) {
 	float texCoordsPreset[] = {
 		0.0f, 0.0f,
 		1.0f, 0.0f,
@@ -65,12 +65,15 @@ class Texture {
 	short presetNum{0};
 	for (int i = 0; i < size; i++) {
 	  if (presetNum > 11)presetNum = 0;
-	  textureCoords.push_back(texCoordsPreset[presetNum]);
-	  textureCoords.push_back(texCoordsPreset[presetNum + 1]);
+	  textureCoords.push_back(texCoordsPreset[presetNum]*scale.x);
+	  textureCoords.push_back(texCoordsPreset[presetNum + 1]*scale.y);
 	  presetNum += 2;
 	}
 
 	return textureCoords;
+  }
+  [[nodiscard]] GLuint getID() const{
+      return rendererID;
   }
 };
 

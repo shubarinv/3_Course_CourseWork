@@ -6,8 +6,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
+#include "shader.hpp"
 
-#include "diffuse_light.hpp"
 
 // Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
 enum Camera_Movement {
@@ -20,7 +20,7 @@ enum Camera_Movement {
 // Default camera values
 const float YAW = -90.0f;
 const float PITCH = 0.0f;
-const float SPEED = 8.f;
+const float SPEED = 20.f;
 const float SENSITIVITY = 0.1f;
 const float ZOOM = 45.0f;
 
@@ -115,16 +115,22 @@ class Camera {
   }
 
   void passDataToShader(Shader* shader) const {
+      shader->bind();
 	// pass projection matrix to shader (note that in this case it could change every frame)
-	glm::mat4 projection = glm::perspective(glm::radians(Zoom), (float)windowSize.x / (float)windowSize.y, 0.1f, 100.0f);
+	glm::mat4 projection = glm::perspective(glm::radians(Zoom), (float)windowSize.x / (float)windowSize.y, 0.1f, 1000.0f);
 	shader->setUniformMat4f("projection", projection);
 
 	// camera/view transformation
 	shader->setUniformMat4f("view", GetViewMatrix());
 	shader->setUniformMat4f("model", model);
+	shader->setUniform3f("viewPos", Position);
+
   }
   void setWindowSize(glm::vec2 _windowSize) {
 	windowSize = _windowSize;
+  }
+  [[nodiscard]] glm::mat4 getProjection() const{
+     return glm::perspective(glm::radians(Zoom), (float)windowSize.x / (float)windowSize.y, 0.1f, 1000.0f);
   }
 
  private:
