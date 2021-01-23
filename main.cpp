@@ -127,10 +127,10 @@ int main(int argc, char *argv[]) {
 
     meshes.push_back(new Mesh("../resources/models/lake.obj"));
     meshes.back()->addTexture("../textures/sand.png")->setScale({0.1, 0.1, 0.1})->setPosition(
-            {0, 0, 0})->setRotation({0, 0, 0})->compile();
+            {0, -0.009, 0})->setRotation({0, 0, 0})->compile();
     lightsManager = new LightsManager;
     lightsManager->addLight(
-            LightsManager::DirectionalLight("1_1", {75, 0, 0}, {0.1, 0.1, 0.1}, {1, 1, 1}, {1, 1, 1}));
+            LightsManager::DirectionalLight("sun", {75, 0, 0}, {0.1, 0.1, 0.1}, {1, 1, 1}, {1, 1, 1}));
 
 
     planes.push_back(new Plane({0, 0, 0}, {0, 0, -1}, {1, 0, -1}, {1, 0, 0}, {60, 60, 60}, false));
@@ -150,6 +150,7 @@ int main(int argc, char *argv[]) {
     auto trees = getCoordsForVertices(0, 0, 100, 400);
     float boatRot = {0};
     bool boatRotPos = true;
+    float lightRot = {0};
     for (auto &tree:trees) {
         meshes.push_back(new Mesh(treeObj));
         auto scale = random<float>(0.5f, 2.5f);
@@ -276,6 +277,19 @@ int main(int argc, char *argv[]) {
             boatRotPos = !boatRotPos;
         }
         boat.setRotation({boatRot, 70, boatRot});
+        LOG_S(INFO) << lightRot;
+        lightRot += 0.002;
+        if (lightRot >= 8) {
+            lightRot = 0;
+        }
+       if (lightRot > 5.5 || lightRot < 2) {
+           lightsManager->getDirLightByName("sun")->diffuse = {0, 0, 0};
+           lightsManager->getDirLightByName("sun")->specular = {0, 0, 0};
+       } else {
+           lightsManager->getDirLightByName("sun")->specular = {1, 1, 1};
+           lightsManager->getDirLightByName("sun")->diffuse = {1, 1, 1};
+       }
+        lightsManager->getDirLightByName("sun")->direction = {sin(lightRot), sin(lightRot)+cos(lightRot), cos(lightRot)};
     }
     glfwTerminate();
     exit(EXIT_SUCCESS);

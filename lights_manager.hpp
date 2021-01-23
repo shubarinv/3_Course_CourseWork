@@ -60,15 +60,17 @@ public:
         shader->setUniform1i("NUM_SPOT_LIGHTS", spotLights.size());
         shader->setUniform1i("NUM_DIR_LIGHTS", dirLights.size());
         for (int i = 0; i < dirLights.size(); ++i) {
-            shader->setUniform3f("dirLights["+std::to_string(i)+"].direction", dirLights[i].direction);
-            shader->setUniform3f("dirLights["+std::to_string(i)+"].diffuse", dirLights[i].diffuse);
-            shader->setUniform3f("dirLights["+std::to_string(i)+"].ambient", dirLights[i].ambient);
-            shader->setUniform3f("dirLights["+std::to_string(i)+"].specular", dirLights[i].specular);
+            shader->setUniform3f("dirLights[" + std::to_string(i) + "].direction", dirLights[i].direction);
+            shader->setUniform3f("dirLights[" + std::to_string(i) + "].diffuse", dirLights[i].diffuse);
+            shader->setUniform3f("dirLights[" + std::to_string(i) + "].ambient", dirLights[i].ambient);
+            shader->setUniform3f("dirLights[" + std::to_string(i) + "].specular", dirLights[i].specular);
         }
     }
 
     DirectionalLight *getDirLightByName(std::string name) {
-
+        for (auto &dirLight:dirLights) {
+            if (dirLight.name == name)return &dirLight;
+        }
     }
 
     PointLight *getPointLightByName(std::string name) {}
