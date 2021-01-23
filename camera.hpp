@@ -129,6 +129,9 @@ class Camera {
   void setWindowSize(glm::vec2 _windowSize) {
 	windowSize = _windowSize;
   }
+  [[nodiscard]] glm::mat4 getProjection() const{
+     return glm::perspective(glm::radians(Zoom), (float)windowSize.x / (float)windowSize.y, 0.1f, 1000.0f);
+  }
 
  private:
   // calculates the front vector from the Camera's (updated) Euler Angles

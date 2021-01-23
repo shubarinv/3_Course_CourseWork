@@ -9,6 +9,7 @@
 #include "car_manager.hpp"
 #include <random>
 #include <glm/gtx/color_space.hpp>
+#include "cube_map_texture.hpp"
 
 
 
@@ -114,12 +115,84 @@ int main(int argc, char *argv[]) {
     shader_tex.setUniform1i("NUM_SPOT_LIGHTS", 0);
     shader_tex.setUniform1i("NUM_DIR_LIGHTS", 0);
 
+    Shader shader_skybox("../shaders/skybox_shader.glsl");
+    shader_skybox.bind();
+    shader_skybox.setUniform1i("skybox", 0);
+    shader_skybox.setUniform1f("intensity", 0.3);
     ObjLoader objLoader;
     std::vector<Mesh *> meshes;
+    float skyboxIntensity=0;
 
     //  water.setUniform1i("numDiffLights", 1);
 
     std::vector<Plane *> planes;
+    float skyboxVertices[] = {
+            // positions
+            -1.0f,  1.0f, -1.0f,
+            -1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+
+            -1.0f, -1.0f,  1.0f,
+            -1.0f, -1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f, -1.0f,
+            -1.0f,  1.0f,  1.0f,
+            -1.0f, -1.0f,  1.0f,
+
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+
+            -1.0f, -1.0f,  1.0f,
+            -1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f, -1.0f,  1.0f,
+            -1.0f, -1.0f,  1.0f,
+
+            -1.0f,  1.0f, -1.0f,
+            1.0f,  1.0f, -1.0f,
+            1.0f,  1.0f,  1.0f,
+            1.0f,  1.0f,  1.0f,
+            -1.0f,  1.0f,  1.0f,
+            -1.0f,  1.0f, -1.0f,
+
+            -1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f,  1.0f,
+            1.0f, -1.0f, -1.0f,
+            1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f,  1.0f,
+            1.0f, -1.0f,  1.0f
+    };
+// skybox VAO
+    unsigned int skyboxVAO, skyboxVBO;
+    glGenVertexArrays(1, &skyboxVAO);
+    glGenBuffers(1, &skyboxVBO);
+    glBindVertexArray(skyboxVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, skyboxVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+
+    // load textures
+    // -------------
+
+    std::vector<std::string> faces{
+                    "../textures/skybox/right.jpg",
+                    "../textures/skybox/left.jpg",
+                    "../textures/skybox/top.jpg",
+                    "../textures/skybox/bottom.jpg",
+                    "../textures/skybox/front.jpg",
+                    "../textures/skybox/back.jpg"};
+    unsigned int cubemapTexture = CubeMapTexture::loadCubemap(faces);
+
+
     meshes.push_back(new Mesh("../resources/models/mountain.obj"));
     meshes.back()->addTexture("../textures/mountain.png")->setScale({0.2, 1, 0.2})->setPosition(
             {196, 10, -173})->setRotation({180, 43, 0})->compile();
@@ -130,10 +203,10 @@ int main(int argc, char *argv[]) {
 
     meshes.push_back(new Mesh("../resources/models/lake.obj"));
     meshes.back()->addTexture("../textures/sand.png")->setScale({0.1, 0.1, 0.1})->setPosition(
-            {0, -0.009, 0})->setRotation({0, 0, 0})->compile();
+            {0, -0.011, 0})->setRotation({0, 0, 0})->compile();
     lightsManager = new LightsManager;
     lightsManager->addLight(
-            LightsManager::DirectionalLight("sun", {75, 0, 0}, {0.1, 0.1, 0.1}, {1,0.95,0.79}, {1,0.95,0.79}));
+            LightsManager::DirectionalLight("sun", {75, 0, 0}, {0.1, 0.1, 0.1}, {1,0.5,0.3}, {1,0.5,0.3}));
 
 
     planes.push_back(new Plane({0, 0, 0}, {0, 0, -1}, {1, 0, -1}, {1, 0, 0}, {60, 60, 60}, false));
@@ -258,6 +331,21 @@ int main(int argc, char *argv[]) {
         carManager.draw(&shader_tex);
         boat.draw(&shader_tex);
 
+        // draw skybox as last
+        glDepthFunc(GL_LEQUAL);  // change depth function so depth test passes when values are equal to depth buffer's content
+        shader_skybox.bind();
+        shader_skybox.setUniform1f("intensity", skyboxIntensity);
+        auto view = glm::mat4(glm::mat3(camera->GetViewMatrix())); // remove translation from the view matrix
+        shader_skybox.setUniformMat4f("view", view);
+        shader_skybox.setUniformMat4f("projection", camera->getProjection());
+        // skybox cube
+        glBindVertexArray(skyboxVAO);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, cubemapTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        glBindVertexArray(0);
+        glDepthFunc(GL_LESS); // set depth function back to default
+
         glCall(glfwSwapBuffers(app.getWindow()->getGLFWWindow()));
         glfwPollEvents();
 
@@ -270,18 +358,33 @@ int main(int argc, char *argv[]) {
             boatRotPos = !boatRotPos;
         }
         boat.setRotation({boatRot, 70, boatRot});
+        LOG_S(INFO) << "LightPos: "<<lightRot;
         lightRot += 0.002;
         if (lightRot >= 8) {
             lightRot = 0;
         }
-       if (lightRot > 5.5 || lightRot < 2) {
+
+       if (lightRot > 5 ) {
            lightsManager->getDirLightByName("sun")->diffuse = {0, 0, 0};
            lightsManager->getDirLightByName("sun")->specular = {0, 0, 0};
+           skyboxIntensity=0.4;
        } else {
            lightsManager->getDirLightByName("sun")->specular = {1,0.95,0.79};
            lightsManager->getDirLightByName("sun")->diffuse = {1,0.95,0.79};
+           if(lightRot>4){
+               lightsManager->getDirLightByName("sun")->specular = {1,lightsManager->getDirLightByName("sun")->specular.y-0.001,lightsManager->getDirLightByName("sun")->specular.z-0.001};
+               lightsManager->getDirLightByName("sun")->diffuse = {1,lightsManager->getDirLightByName("sun")->diffuse.y-0.001,lightsManager->getDirLightByName("sun")->diffuse.z-0.001};
+               skyboxIntensity-=0.0015;
+           }else{
+               lightsManager->getDirLightByName("sun")->specular ={1,lightsManager->getDirLightByName("sun")->specular.y+0.001,lightsManager->getDirLightByName("sun")->specular.z+0.001};
+               lightsManager->getDirLightByName("sun")->diffuse ={1,lightsManager->getDirLightByName("sun")->diffuse.y+0.001,lightsManager->getDirLightByName("sun")->diffuse.z+0.001};
+               skyboxIntensity+=0.002;
+           }
+           if(skyboxIntensity>1){
+               skyboxIntensity=1;
+           }
        }
-        lightsManager->getDirLightByName("sun")->direction = {sin(lightRot), sin(lightRot)+cos(lightRot), cos(lightRot)};
+        lightsManager->getDirLightByName("sun")->direction = {sin(lightRot), cos(lightRot), cos(lightRot)};
     }
     glfwTerminate();
     exit(EXIT_SUCCESS);
