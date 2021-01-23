@@ -70,15 +70,21 @@ public:
         shader->setUniform1f("material.shininess", material.shininess);
 
         if (!textures.empty()) {
-           // shader->setUniform1i("material.diffuse",textures[0]->getID());
-           shader->setUniform1i("material.diffuse",0);
-            if(textures.size()==2){
-                //shader->setUniform1i("material.specular",textures[1]->getID());
-                shader->setUniform1i("material.specular",1);
+            shader->setUniform1i("material.diffuse", 0);
+            shader->setUniform1i("useTexture", 1);
+            if (textures.size() == 2) {
+                shader->setUniform1i("material.specular", 1);
             }
             for (int i = 0; i < textures.size(); ++i) {
                 textures[i]->bind(i);
             }
+        }
+        else{
+            shader->setUniform1i("useTexture", 0);
+            shader->setUniform3f("material.mat_diffuse", material.diffuse);
+            shader->setUniform3f("material.mat_specular", material.specular);
+            shader->setUniform3f("material.mat_ambient", material.ambient);
+
         }
         if (indexBuffer != nullptr) {
             Renderer::draw(indexBuffer, vao, shader, indexBufferSize, GL_TRIANGLES);
@@ -147,9 +153,9 @@ public:
             return this;
         }
         addNewBuffer(VertexBuffer(coordinates));// Setting VBO
-if(textures.size()==1){
-    addTexture("../textures/NoSpec.png");
-}
+        if (textures.size() == 1) {
+            addTexture("../textures/NoSpec.png");
+        }
         fillVAO();
         return this;
     }
@@ -173,7 +179,7 @@ if(textures.size()==1){
             auto texCoords = Texture::generateTextureCoords(coordinates.size() / 3);
             addNewBuffer(TextureBuffer(texCoords));
         }
-        for(auto &mesh:relatedMeshes){
+        for (auto &mesh:relatedMeshes) {
             mesh.setTextures(textures);
         }
         return this;
