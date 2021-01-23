@@ -31,22 +31,52 @@ public:
     };
 
     struct PointLight {
-        std::string name;
-        glm::vec3 position;
+        PointLight(std::string _name,
+                   glm::vec3 _position,
 
-        glm::vec3 ambient;
-        glm::vec3 diffuse;
-        glm::vec3 specular;
+                   glm::vec3 _ambient,
+                   glm::vec3 _diffuse,
+                   glm::vec3 _specular,
+
+                   float _constant,
+                   float _linear,
+                   float _quadratic) {
+            name = std::move(_name);
+            position = _position;
+            ambient = _ambient;
+            diffuse = _diffuse;
+            specular = _specular;
+            constant = _constant;
+            linear = _linear;
+            quadratic = _quadratic;
+        }
+
+        std::string name;
+        glm::vec3 position{};
+
+        glm::vec3 ambient{};
+        glm::vec3 diffuse{};
+        glm::vec3 specular{};
 
         float constant;
         float linear;
         float quadratic;
     };
+
     struct SpotLight {
         std::string name;
         glm::vec3 position;
         glm::vec3 direction;
         float cutOff;
+        float outerCutOff;
+
+        float constant;
+        float linear;
+        float quadratic;
+
+        glm::vec3 ambient;
+        glm::vec3 diffuse;
+        glm::vec3 specular;
     };
 private:
     std::vector<PointLight> pointLights{};
@@ -65,17 +95,52 @@ public:
             shader->setUniform3f("dirLights[" + std::to_string(i) + "].ambient", dirLights[i].ambient);
             shader->setUniform3f("dirLights[" + std::to_string(i) + "].specular", dirLights[i].specular);
         }
-    }
+        for (int i = 0; i < spotLights.size(); ++i) {
+            shader->setUniform3f("spotLight[" + std::to_string(i) + "].direction", spotLights[i].direction);
+            shader->setUniform3f("spotLight[" + std::to_string(i) + "].position", spotLights[i].position);
+            shader->setUniform1f("spotLight[" + std::to_string(i) + "].cutOff", spotLights[i].cutOff);
+            shader->setUniform1f("spotLight[" + std::to_string(i) + "].outerCutOff", spotLights[i].outerCutOff);
+            shader->setUniform1f("spotLight[" + std::to_string(i) + "].constant", spotLights[i].constant);
+            shader->setUniform1f("spotLight[" + std::to_string(i) + "].linear", spotLights[i].linear);
+            shader->setUniform1f("spotLight[" + std::to_string(i) + "].quadratic", spotLights[i].quadratic);
+            shader->setUniform3f("spotLight[" + std::to_string(i) + "].diffuse", spotLights[i].diffuse);
+            shader->setUniform3f("spotLight[" + std::to_string(i) + "].ambient", spotLights[i].ambient);
+            shader->setUniform3f("spotLight[" + std::to_string(i) + "].specular", spotLights[i].specular);
 
-    DirectionalLight *getDirLightByName(std::string name) {
-        for (auto &dirLight:dirLights) {
-            if (dirLight.name == name)return &dirLight;
+        }
+        for (int i = 0; i < pointLights.size(); ++i) {
+
+            shader->setUniform3f("pointLights[" + std::to_string(i) + "].position", pointLights[i].position);
+            shader->setUniform1f("pointLights[" + std::to_string(i) + "].constant", pointLights[i].constant);
+            shader->setUniform1f("pointLights[" + std::to_string(i) + "].linear", pointLights[i].linear);
+            shader->setUniform1f("pointLights[" + std::to_string(i) + "].quadratic", pointLights[i].quadratic);
+            shader->setUniform3f("pointLights[" + std::to_string(i) + "].diffuse", pointLights[i].diffuse);
+            shader->setUniform3f("pointLights[" + std::to_string(i) + "].ambient", pointLights[i].ambient);
+            shader->setUniform3f("pointLights[" + std::to_string(i) + "].specular", pointLights[i].specular);
+
         }
     }
 
-    PointLight *getPointLightByName(std::string name) {}
+    DirectionalLight *getDirLightByName(const std::string &name) {
+        for (auto &dirLight:dirLights) {
+            if (dirLight.name == name)return &dirLight;
+        }
+        return nullptr;
+    }
 
-    SpotLight *getSpotLightByName(std::string name) {}
+    PointLight *getPointLightByName(std::string name) {
+        for (auto &pointLight:pointLights) {
+            if (pointLight.name == name)return &pointLight;
+        }
+        return nullptr;
+    }
+
+    SpotLight *getSpotLightByName(std::string name) {
+        for (auto &spotLight:spotLights) {
+            if (spotLight.name == name)return &spotLight;
+        }
+        return nullptr;
+    }
 
 public:
     void addLight(PointLight pointLight) {

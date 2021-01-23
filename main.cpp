@@ -8,6 +8,9 @@
 #include "plane.h"
 #include "car_manager.hpp"
 #include <random>
+#include <glm/gtx/color_space.hpp>
+
+
 
 LightsManager *lightsManager;
 float lastX = 0;
@@ -130,7 +133,7 @@ int main(int argc, char *argv[]) {
             {0, -0.009, 0})->setRotation({0, 0, 0})->compile();
     lightsManager = new LightsManager;
     lightsManager->addLight(
-            LightsManager::DirectionalLight("sun", {75, 0, 0}, {0.1, 0.1, 0.1}, {1, 1, 1}, {1, 1, 1}));
+            LightsManager::DirectionalLight("sun", {75, 0, 0}, {0.1, 0.1, 0.1}, {1,0.95,0.79}, {1,0.95,0.79}));
 
 
     planes.push_back(new Plane({0, 0, 0}, {0, 0, -1}, {1, 0, -1}, {1, 0, 0}, {60, 60, 60}, false));
@@ -220,7 +223,7 @@ int main(int argc, char *argv[]) {
     glfwSetCursorPosCallback(app.getWindow()->getGLFWWindow(), mouse_callback);
     glfwSetScrollCallback(app.getWindow()->getGLFWWindow(), scroll_callback);
 
-    CarManager carManager;
+    CarManager carManager(lightsManager);
     carManager.addPath(getCoordsForVertices(0, 0, 155, 18000), true, -0.02, 90);
     carManager.addPath(getCoordsForVertices(0, 0, 160, 9000), true, -0.04, 90);
     CarManager::Path path(getCoordsForVertices(0, 0, 180, 9000), true, -0.04, 90);
@@ -231,18 +234,8 @@ int main(int argc, char *argv[]) {
                 {segment.x, 0.01, segment.z})->setRotation(
                 {0, path.initialRot + (path.anglePerTick * (float) i), 0})->compile();
     }
-    carManager.addCar();
-    carManager.addCar();
-    carManager.addCar();
-    carManager.addCar();
-    carManager.addCar();
-    carManager.addCar();
-    carManager.addCar();
-    carManager.addCar();
-    carManager.addCar();
-    carManager.addCar();
-    carManager.addCar();
-    carManager.addCar();
+    carManager.addCars(1);
+
 
     while (!app.getShouldClose()) {
         app.getWindow()->updateFpsCounter();
@@ -277,7 +270,6 @@ int main(int argc, char *argv[]) {
             boatRotPos = !boatRotPos;
         }
         boat.setRotation({boatRot, 70, boatRot});
-        LOG_S(INFO) << lightRot;
         lightRot += 0.002;
         if (lightRot >= 8) {
             lightRot = 0;
@@ -286,8 +278,8 @@ int main(int argc, char *argv[]) {
            lightsManager->getDirLightByName("sun")->diffuse = {0, 0, 0};
            lightsManager->getDirLightByName("sun")->specular = {0, 0, 0};
        } else {
-           lightsManager->getDirLightByName("sun")->specular = {1, 1, 1};
-           lightsManager->getDirLightByName("sun")->diffuse = {1, 1, 1};
+           lightsManager->getDirLightByName("sun")->specular = {1,0.95,0.79};
+           lightsManager->getDirLightByName("sun")->diffuse = {1,0.95,0.79};
        }
         lightsManager->getDirLightByName("sun")->direction = {sin(lightRot), sin(lightRot)+cos(lightRot), cos(lightRot)};
     }
