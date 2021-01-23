@@ -66,18 +66,16 @@ public:
 
     Mesh *draw(Shader *shader) {
         shader->bind();
-        if (textures.empty()) {
-            shader->setUniform1i("useTextures", false);
-        } else {
-            shader->setUniform1i("useTextures", true);
-        }
         shader->setUniformMat4f("model", model);
-        shader->setUniform3f("material.ambient", material.ambient);
-        shader->setUniform3f("material.specular", material.specular);
-        shader->setUniform3f("material.diffuse", material.diffuse);
         shader->setUniform1f("material.shininess", material.shininess);
 
-        if (!textures.empty() && shader->doesUniformExist("u_Texture")) {
+        if (!textures.empty()) {
+           // shader->setUniform1i("material.diffuse",textures[0]->getID());
+           shader->setUniform1i("material.diffuse",0);
+            if(textures.size()==2){
+                //shader->setUniform1i("material.specular",textures[1]->getID());
+                shader->setUniform1i("material.specular",1);
+            }
             for (int i = 0; i < textures.size(); ++i) {
                 textures[i]->bind(i);
             }
@@ -149,7 +147,9 @@ public:
             return this;
         }
         addNewBuffer(VertexBuffer(coordinates));// Setting VBO
-
+if(textures.size()==1){
+    addTexture("../textures/NoSpec.png");
+}
         fillVAO();
         return this;
     }
@@ -167,10 +167,14 @@ public:
 
     Mesh *addTexture(std::string filePath) {
         textures.push_back(new Texture(std::move(filePath)));
+
         if (!wasBufferDefined(Buffer::TEXTURE_COORDS)) {
             LOG_S(INFO) << "Generating textureCoords";
             auto texCoords = Texture::generateTextureCoords(coordinates.size() / 3);
             addNewBuffer(TextureBuffer(texCoords));
+        }
+        for(auto &mesh:relatedMeshes){
+            mesh.setTextures(textures);
         }
         return this;
     }

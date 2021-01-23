@@ -63,20 +63,29 @@ public:
         }
         addNewBuffer(VertexBuffer(coordinates));// Setting VBO
         generateNormals();
+        if(textures.size()==1){
+            addTexture("../textures/NoSpec.png");
+        }
         fillVAO();
 
         return this;
     }
 
     Plane *draw(Shader *shader) {
-        if (textures.empty())shader->setUniform1i("usetTextures", false);
-        else shader->setUniform1i("useTextures", true);
         shader->setUniformMat4f("model", model);
-        if (!textures.empty() && shader->doesUniformExist("u_Texture")) {
+
+        shader->setUniform1f("material.shininess", 10);
+
+        if (!textures.empty()) {
+            shader->setUniform1i("material.diffuse",0);
+            if(textures.size()==2){
+                shader->setUniform1i("material.specular",1);
+            }
             for (int i = 0; i < textures.size(); ++i) {
                 textures[i]->bind(i);
             }
         }
+
 
         Renderer::draw(vao, shader, coordinates.size() / 3, GL_TRIANGLES);
         return this;

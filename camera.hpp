@@ -6,8 +6,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <vector>
+#include "shader.hpp"
 
-#include "diffuse_light.hpp"
 
 // Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
 enum Camera_Movement {
@@ -123,6 +123,8 @@ class Camera {
 	// camera/view transformation
 	shader->setUniformMat4f("view", GetViewMatrix());
 	shader->setUniformMat4f("model", model);
+	shader->setUniform3f("viewPos", Position);
+
   }
   void setWindowSize(glm::vec2 _windowSize) {
 	windowSize = _windowSize;

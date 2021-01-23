@@ -1,12 +1,12 @@
 
 #include "application.hpp"
 #include "camera.hpp"
-#include "diffuse_light.hpp"
 #include "lights_manager.hpp"
 #include "mesh.hpp"
 #include "renderer.hpp"
 #include "shader.hpp"
 #include "plane.h"
+#include "car_manager.hpp"
 #include <random>
 
 LightsManager *lightsManager;
@@ -105,10 +105,12 @@ int main(int argc, char *argv[]) {
     glDepthFunc(GL_LESS);
     glCall(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
 
-    Shader shader_tex("../shaders/multiple_diffuse_shader.glsl", false);
+    Shader shader_tex("../shaders/lighting_shader.glsl", false);
     shader_tex.bind();
-    shader_tex.setUniform1i("u_Texture", 0);
-    shader_tex.setUniform1i("numDiffLights", 1);
+    shader_tex.setUniform1i("NUM_POINT_LIGHTS", 0);
+    shader_tex.setUniform1i("NUM_SPOT_LIGHTS", 0);
+    shader_tex.setUniform1i("NUM_DIR_LIGHTS", 0);
+
     ObjLoader objLoader;
     std::vector<Mesh *> meshes;
 
@@ -127,26 +129,38 @@ int main(int argc, char *argv[]) {
     meshes.back()->addTexture("../textures/sand.png")->setScale({0.1, 0.1, 0.1})->setPosition(
             {0, 0, 0})->setRotation({0, 0, 0})->compile();
     lightsManager = new LightsManager;
-    lightsManager->addLight(DiffuseLight("1_1", {{5, 60, 5}, {0.8, 0.8, 0.8}, 0.8}));
+    lightsManager->addLight(
+            LightsManager::DirectionalLight("1_1", {75, 0, 0}, {0.1, 0.1, 0.1}, {1, 1, 1}, {1, 1, 1}));
+
 
     planes.push_back(new Plane({0, 0, 0}, {0, 0, -1}, {1, 0, -1}, {1, 0, 0}, {60, 60, 60}, false));
     planes.back()->addTexture("../textures/Water_002_COLOR.png")->
-            addTexture("../textures/Water_001_SPEC.png")->setPosition({-30, -1.5, 30})->compile();
+            addTexture("../textures/Water_001_SPEC.png")->setPosition({-30, -1.3, 30})->compile();
 
+    auto boatObj = objLoader.loadObj("../resources/models/boat.obj");
+    meshes.push_back(new Mesh(boatObj));
+    meshes.back()->addTexture("../textures/wood.png")->setScale({0.3, 0.3, 0.3})->setPosition(
+            {20, -1.5, 0})->setOrigin({20, -1.5, 0})->setRotation({10, 90, 0})->compile();
+
+    Mesh boat(boatObj);
+    boat.addTexture("../textures/wood.png")->setScale({0.3, 0.3, 0.3})->setPosition(
+            {0, -1.3, 0})->setOrigin({0, -1.3, 0})->setRotation({0, 70, 0})->compile();
 
     auto treeObj = objLoader.loadObj("../resources/models/lowpolytree.obj");
     auto trees = getCoordsForVertices(0, 0, 100, 400);
+    float boatRot = {0};
+    bool boatRotPos = true;
     for (auto &tree:trees) {
         meshes.push_back(new Mesh(treeObj));
         auto scale = random<float>(0.5f, 2.5f);
         if (scale >= 1) {
             meshes.back()->setPosition(
-                    {tree.x + random<float>(-40.f, 40.f), tree.y + scale + 1, tree.z + random<float>(-40.f, 40.f)})->
+                    {tree.x + random<float>(-30.f, 30.f), tree.y + scale + 1, tree.z + random<float>(-30.f, 30.f)})->
                     setScale({scale, scale, scale})->compile();
         } else {
             meshes.back()->setPosition(
-                    {tree.x + random<float>(-40.f, 40.f),
-                     tree.y + scale + 0.3, tree.z + random<float>(-40.f, 40.f)})->
+                    {tree.x + random<float>(-30.f, 30.f),
+                     tree.y + scale + 0.3, tree.z + random<float>(-30.f, 30.f)})->
                     setScale({scale, scale, scale})->compile();
         }
 
@@ -198,20 +212,37 @@ int main(int argc, char *argv[]) {
     planes.push_back(new Plane({0, 0, 0}, {0, 0, -1}, {1, 0, -1}, {1, 0, 0}, {120, 600, 400}, {24, 8}));
     planes.back()->addTexture("../textures/grass.png")->setPosition({-60, 0, -60})->setRotation({0, 180, 0})->compile();
 
-    auto carsPath = getCoordsForVertices(0, 0, 155, 18000);
-    Mesh car("../resources/models/car_1.fbx");
-    car.addTexture("../textures/Car Texture 1.png")->setOrigin({carsPath[0].x, 0, carsPath[0].z})->
-            setPosition({carsPath[0].x, 0, carsPath[0].z})->setRotation({0, 90, 0})->compile();
     // camera
     camera = new Camera(glm::vec3(0.0f, 0.0f, 0.0f));
     camera->setWindowSize(app.getWindow()->getWindowSize());
 
     glfwSetCursorPosCallback(app.getWindow()->getGLFWWindow(), mouse_callback);
     glfwSetScrollCallback(app.getWindow()->getGLFWWindow(), scroll_callback);
-    lightsManager->getLightByNameDir("1_1")->enable();
 
-    int carRot{0};
-    float car1R={90};
+    CarManager carManager;
+    carManager.addPath(getCoordsForVertices(0, 0, 155, 18000), true, -0.02, 90);
+    carManager.addPath(getCoordsForVertices(0, 0, 160, 9000), true, -0.04, 90);
+    CarManager::Path path(getCoordsForVertices(0, 0, 180, 9000), true, -0.04, 90);
+    for (int i = 0; i < path.path.size(); i += 40) {
+        auto segment = path.path[i];
+        planes.push_back(new Plane({0, 0, 0}, {0, 0, -1}, {1, 0, -1}, {1, 0, 0}, {15, 10, 30}, false));
+        planes.back()->setColor({1, 0, 0})->setPosition({segment.x, 0.01, segment.z})->setOrigin(
+                {segment.x, 0.01, segment.z})->setRotation(
+                {0, path.initialRot + (path.anglePerTick * (float) i), 0})->compile();
+    }
+    carManager.addCar();
+    carManager.addCar();
+    carManager.addCar();
+    carManager.addCar();
+    carManager.addCar();
+    carManager.addCar();
+    carManager.addCar();
+    carManager.addCar();
+    carManager.addCar();
+    carManager.addCar();
+    carManager.addCar();
+    carManager.addCar();
+
     while (!app.getShouldClose()) {
         app.getWindow()->updateFpsCounter();
         auto currentFrame = glfwGetTime();
@@ -230,17 +261,21 @@ int main(int argc, char *argv[]) {
         for (auto &mesh:meshes) {
             mesh->draw(&shader_tex);
         }
-        car.draw(&shader_tex);
+        carManager.draw(&shader_tex);
+        boat.draw(&shader_tex);
 
         glCall(glfwSwapBuffers(app.getWindow()->getGLFWWindow()));
         glfwPollEvents();
-        if(carRot==carsPath.size()-1){
-            carRot=0;
+
+        if (boatRotPos)
+            boatRot += 0.05;
+        else {
+            boatRot -= 0.05;
         }
-        carRot++;
-        car.setOrigin({carsPath[carRot].x, 0, carsPath[carRot].z})->
-                setPosition({carsPath[carRot].x, 0, carsPath[carRot].z})->setRotation({0, car1R, 0});
-        car1R-=0.02;
+        if (boatRot > 3.0f || boatRot < -5.f) {
+            boatRotPos = !boatRotPos;
+        }
+        boat.setRotation({boatRot, 70, boatRot});
     }
     glfwTerminate();
     exit(EXIT_SUCCESS);

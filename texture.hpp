@@ -72,6 +72,9 @@ class Texture {
 
 	return textureCoords;
   }
+  [[nodiscard]] GLuint getID() const{
+      return rendererID;
+  }
 };
 
 #endif //CGLABS__TEXTURE_HPP_
